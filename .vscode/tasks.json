@@ -1,0 +1,88 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Prepare Build Directory",
+            "type": "process",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "New-Item -ItemType Directory -Force -Path \"${workspaceFolder}\\build\" | Out-Null"
+            ],
+            "presentation": {
+                "echo": false,
+                "reveal": "silent",
+                "showReuseMessage": false
+            }
+        },
+        {
+            "label": "Compile Resources",
+            "type": "shell",
+            "command": "windres",
+            "args": [
+                "-c",
+                "65001",
+                "resources.rc",
+                "-o",
+                "${workspaceFolder}\\build\\resources.o"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}\\src"
+            },
+            "dependsOn": "Prepare Build Directory"
+        },
+        {
+            "label": "Compile C/C++",
+            "type": "cppbuild",
+            "command": "gcc",
+            "args": [
+                "-fdiagnostics-color=always",
+                "-Wall",
+                "-Wextra",
+                "-O2",
+                "-s",
+                "-fPIE",
+                "${workspaceFolder}\\src\\main.c",
+                "${workspaceFolder}\\build\\resources.o",
+                "-o",
+                "${workspaceFolder}\\build\\VBAudioDSPDropoutFix.exe",
+                "-mwindows",
+                "-pie",
+                "-Wl,--dynamicbase",
+                "-Wl,--nxcompat",
+                "-Wl,--high-entropy-va"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "dependsOn": "Compile Resources"
+        },
+        {
+            "label": "📦 Build : Secure Release",
+            "detail": "📥 PIE 📥 ASLR 📥 DEP 📥 High-Entropy VA 💻 Console : NO",
+            "type": "process",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "Remove-Item -LiteralPath \"${workspaceFolder}\\build\\resources.o\" -ErrorAction SilentlyContinue"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "echo": false,
+                "showReuseMessage": false
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn": "Compile C/C++"
+        }
+    ]
+}
